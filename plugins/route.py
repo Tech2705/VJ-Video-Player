@@ -145,17 +145,21 @@ async def handle_click(request):
 async def get_original(request: web.Request):
     short_link = request.match_info["short_link"]
 
+    # Skip favicon.ico to avoid unnecessary decode attempt
+    if short_link == "favicon.ico":
+        logging.info("Favicon request ignored.")
+        return web.Response(text=html_content, content_type='text/html')
+
     try:
         original = await decode(short_link)
         if original:
             link = f"{STREAM_URL}link?{original}"
-            raise web.HTTPFound(link)  # Redirect to the constructed link
+            raise web.HTTPFound(link)
         else:
             logging.warning(f"Decoded value was empty for: {short_link}")
     except Exception as e:
         logging.error(f"Error decoding short link '{short_link}': {e}")
 
-    # Fallback: show welcome page on failure
     return web.Response(text=html_content, content_type='text/html')
 
 @routes.get('/link', allow_head=True)
