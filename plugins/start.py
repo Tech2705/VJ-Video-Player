@@ -17,12 +17,20 @@ async def encode(string):
     base64_string = (base64_bytes.decode("ascii")).strip("=")
     return base64_string
 
-async def decode(base64_string):
-    base64_string = base64_string.strip("=") # links generated before this commit will be having = sign, hence striping them to handle padding errors.
-    base64_bytes = (base64_string + "=" * (-len(base64_string) % 4)).encode("ascii")
-    string_bytes = base64.urlsafe_b64decode(base64_bytes) 
-    string = string_bytes.decode("ascii")
-    return string
+async def decode(base64_string: str) -> str:
+    # Remove any existing padding (for backward compatibility with older links)
+    base64_string = base64_string.rstrip("=")
+
+    # Recalculate and apply correct padding
+    padded_string = base64_string + "=" * (-len(base64_string) % 4)
+
+    # Convert to bytes and decode
+    base64_bytes = padded_string.encode("ascii")
+    string_bytes = base64.urlsafe_b64decode(base64_bytes)
+    
+    # Return the decoded ASCII string
+    return string_bytes.decode("ascii")
+
 
 @Client.on_message(filters.command("start") & filters.private)
 async def start(client, message):
